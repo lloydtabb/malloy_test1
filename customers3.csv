@@ -1,7 +1,7 @@
-c_?customer;c_?country
-A;USA
-B;USA
-C;CANADA
-D;USA
-E;CANADA
-F;CANADA
+c_customer,c_country
+A,USA
+B,USA
+C,CANADA
+D,USA
+E,CANADA
+F,CANADA
