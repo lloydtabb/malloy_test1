@@ -1,0 +1,8 @@
+>>>malloy
+source: sales_source is duckdb.table('sales2.csv') extend {
+  measure : sales_distinct_cust is count(distinct `s_​customer`)
+ }
+>>>malloy
+source: customer_source is duckdb.table('customers1.csv' (HEADER)) extend {
+  //measure : sales_distinct_cust is count(distinct `c_​customer`)
+ }
