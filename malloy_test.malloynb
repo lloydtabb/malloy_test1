@@ -1,8 +1,61 @@
 >>>malloy
-source: sales_source is duckdb.table('sales2.csv') extend {
-  measure : sales_distinct_cust is count(distinct `s_​customer`)
- }
+sql: sales_table is {
+        select: """
+        SELECT           'A' as s_customer, 12 as sales
+        UNION ALL SELECT 'B', 10
+        UNION ALL SELECT 'C', 11
+        UNION ALL SELECT 'A', 8
+        UNION ALL SELECT 'A', 9
+        UNION ALL SELECT 'C', 10
+        UNION ALL SELECT 'D', 6
+      """
+      connection: "duckdb"
+        }
+sql: customers_table is {
+        select: """
+        SELECT            'A' as c_customer, 'USA' as c_country
+        UNION ALL SELECT  'B', 'USA' 
+        UNION ALL SELECT  'C', 'CANADA'
+        UNION ALL SELECT  'D', 'USA'
+        UNION ALL SELECT  'E', 'CANADA'
+        UNION ALL SELECT  'F', 'CANADA'
+      """
+      connection: "duckdb"
+        }
+
+source: sales2_source is from_sql(sales_table)
+{
+  join_one: dim_cust is from_sql(customers_table) {primary_key: c_customer } with s_customer
+  
+  measure : sales_distinct_cust is count(distinct s_customer)
+
+}
+
+source: customers2_source is from_sql(customers_table)
+{
+  join_one: f_sales is from_sql(sales_table) {primary_key: s_customer } with c_customer
+  
+  measure : customers_distinct_cust is count(distinct c_customer)
+  measure: customers_with_sales_dist is count(distinct f_sales.s_customer)
+  //measure: count(distinct f_sales.s_customer) / count(distinct c_customer)
+}
+// above i cannot divide inside measure
 >>>malloy
-source: customer_source is duckdb.table('customers1.csv' (HEADER)) extend {
-  //measure : sales_distinct_cust is count(distinct `c_​customer`)
- }
+
+
+query: sales_cust is sales2_source -> {
+aggregate: sales_distinct_cust
+//aggregate: c_cust_count is count(distinct dim_cust.c_customer)
+}
+
+query: customers_cust is customers2_source -> {
+  aggregate: customers_distinct_cust
+}
+>>>malloy
+
+query: test is customers2_source -> {
+  aggregate: customers_distinct_cust
+  aggregate: customers_with_sales_dist
+  aggregate: coverage is div(customers_with_sales_dist, customers_distinct_cust)
+
+}
