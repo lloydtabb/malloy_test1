@@ -23,40 +23,34 @@ sql: customers_table is {
       connection: "duckdb"
         }
 
-source: sales_source is from_sql(sales_table)
+source: sales is from_sql(sales_table)
 {
-  join_one: dim_cust is from_sql(customers_table) {primary_key: c_customer } with s_customer
-  
-  measure : sales_distinct_cust is count(distinct s_customer)
+  measure: 
+    total_sales is sales.sum()
+    sale_count is count()
 
 }
 
-source: customers_source is from_sql(customers_table)
+source: customers is from_sql(customers_table)
 {
-  join_one: f_sales is from_sql(sales_table) {primary_key: s_customer } with c_customer
-  
-  measure : customers_distinct_cust is count(distinct c_customer)
-  measure: customers_with_sales_dist is count(distinct f_sales.s_customer)
-  //measure: count(distinct f_sales.s_customer) / count(distinct c_customer)
+  measure : customers_count is count()
+}
+
+source: customer_sales is customers extend {
+  join_many: sales on c_customer = sales.s_customer
+  // count of customer where they have any data in sales.
+  measure: customers_with_sales is count() {where: sales.sales != null}
 }
 // above i cannot divide inside measure
 >>>malloy
 
 
-query: q_sales_cust is sales_source -> {
-aggregate: sales_distinct_cust
-//aggregate: c_cust_count is count(distinct dim_cust.c_customer)
-}
+run: customer_sales -> {
+aggregate: 
+    customers_count
+    sales.total_sales
+    customers_with_sales
+    # percent
+    coverage is customers_with_sales / customers_count
 
-query: q_customers_cust is customers_source -> {
-  aggregate: customers_distinct_cust
-}
->>>malloy
-
-query: test is customers_source -> {
-  aggregate: customers_distinct_cust
-  aggregate: customers_with_sales_dist
-  # percent
-  aggregate: coverage is div(customers_with_sales_dist, customers_distinct_cust)
-
-}
+  }
