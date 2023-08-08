@@ -39,14 +39,14 @@ source: customers is from_sql(customers_table)
 source: customer_sales is customers extend {
   join_many: sales on c_customer = sales.s_customer
   // count of customer where they have any data in sales.
-  measure: customers_with_sales is count() {where: sales.sales != null}
+  measure: customers_with_sales is customers_count {where: sales.sales != null}
 }
 // above i cannot divide inside measure
 >>>malloy
 
 
 run: customer_sales -> {
-aggregate: 
+  aggregate: 
     customers_count
     sales.total_sales
     customers_with_sales
