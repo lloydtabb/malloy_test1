@@ -23,7 +23,7 @@ sql: customers_table is {
       connection: "duckdb"
         }
 
-source: sales2_source is from_sql(sales_table)
+source: sales_source is from_sql(sales_table)
 {
   join_one: dim_cust is from_sql(customers_table) {primary_key: c_customer } with s_customer
   
@@ -31,7 +31,7 @@ source: sales2_source is from_sql(sales_table)
 
 }
 
-source: customers2_source is from_sql(customers_table)
+source: customers_source is from_sql(customers_table)
 {
   join_one: f_sales is from_sql(sales_table) {primary_key: s_customer } with c_customer
   
@@ -43,19 +43,20 @@ source: customers2_source is from_sql(customers_table)
 >>>malloy
 
 
-query: sales_cust is sales2_source -> {
+query: q_sales_cust is sales_source -> {
 aggregate: sales_distinct_cust
 //aggregate: c_cust_count is count(distinct dim_cust.c_customer)
 }
 
-query: customers_cust is customers2_source -> {
+query: q_customers_cust is customers_source -> {
   aggregate: customers_distinct_cust
 }
 >>>malloy
 
-query: test is customers2_source -> {
+query: test is customers_source -> {
   aggregate: customers_distinct_cust
   aggregate: customers_with_sales_dist
+  # percent
   aggregate: coverage is div(customers_with_sales_dist, customers_distinct_cust)
 
 }
